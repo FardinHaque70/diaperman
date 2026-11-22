@@ -20,12 +20,18 @@ same Wi-Fi and open `http://<your-mac's-ip>:8080`.
 
 Live at **https://fardinhaque70.github.io/diaperman/** (GitHub Pages).
 
-To publish changes, commit and push to `main`; GitHub updates the site
-within a minute or two:
+To publish changes, commit and push to `main`. A GitHub workflow
+(`.github/workflows/pages.yml`) packs the whole game into one page with
+`scripts/build.mjs` and publishes it, usually within a minute:
 
 ```bash
 git add -A && git commit -m "Update game" && git push
 ```
+
+Packing everything into one page means phones always get a complete version
+(old or new) even while their browser cache catches up, never a broken mix.
+To try the packed build locally: `npm install --no-save esbuild@0.24.0 && node scripts/build.mjs`,
+then serve the `dist/` folder.
 
 ## Link previews
 
