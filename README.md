@@ -27,11 +27,10 @@ within a minute or two:
 git add -A && git commit -m "Update game" && git push
 ```
 
-## Nice link previews
+## Link previews
 
-Messenger shows a preview card for shared links. After hosting, take a
-screenshot of the title screen, save it as `preview.png` in this folder, and
-uncomment the `og:image` line in `index.html` with your full URL.
+`preview.png` (1200×630) is the picture Messenger/WhatsApp show when the link
+is shared; it's set by the `og:image` tags in `index.html`.
 
 ## Online leaderboard (Firebase, free)
 

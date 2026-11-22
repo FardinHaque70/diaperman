@@ -74,7 +74,7 @@ function star(cx, cy, outer, inner, points) {
 
 // Outfit stages, each one adds a diaper piece:
 // 1 diaper, 2 helmet, 3 cape, 4 mask, 5 gloves, 6 boots, 7 chest armor, 8 gold trim (full power)
-function drawHero(g, pose, stage) {
+export function drawHero(g, pose, stage) {
   const O = C.outline;
   const D = C.diaper;
   const has = (n) => stage >= n;
