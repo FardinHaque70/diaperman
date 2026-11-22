@@ -5,7 +5,7 @@
 // Run locally:  npx -y esbuild@0.24.0 --version && node scripts/build.mjs
 // (GitHub runs this automatically on every push; see .github/workflows/pages.yml)
 import { build } from 'esbuild';
-import { readFile, writeFile, mkdir, copyFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, copyFile, cp, rm } from 'node:fs/promises';
 
 const ENTRY_TAG = '<script type="module" src="src/main.js"></script>';
 
@@ -30,5 +30,10 @@ if (!html.includes(ENTRY_TAG)) throw new Error(`index.html is missing: ${ENTRY_T
 await writeFile('dist/index.html', html.replace(ENTRY_TAG, () => `<script>${js}</script>`));
 
 for (const f of ['manifest.webmanifest', 'icon.svg', 'preview.png']) await copyFile(f, `dist/${f}`);
+// The game engine, hosted with the game
+await cp('vendor', 'dist/vendor', { recursive: true });
+// Also publish the separate source files, so a phone that still has an older
+// cached page (which loads src/main.js) keeps working instead of hanging.
+await cp('src', 'dist/src', { recursive: true });
 
 console.log(`Built dist/index.html (${Math.round(js.length / 1024)} KB of game code inlined)`);

@@ -76,7 +76,18 @@
       font: bold 22px "Trebuchet MS", sans-serif; color: #fff; text-shadow: 0 2px 0 #1d3557;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <!-- Game engine, hosted with the game (no outside site needed) -->
+  <script src="vendor/phaser-3.80.1.min.js"></script>
+  <script>
+    // On a slow connection, never leave people staring at "Loading..." with no way out
+    setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (!el) return; // game started
+      el.innerHTML = 'Still loading&hellip;<br><span style="font-size:16px">Tap to try again</span>';
+      el.style.textAlign = 'center';
+      el.onclick = function () { location.reload(); };
+    }, 12000);
+  </script>
 </head>
 <body>
   <div id="loading">Loading…</div>
