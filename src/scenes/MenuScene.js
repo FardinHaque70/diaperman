@@ -1,4 +1,4 @@
-import { W, textStyle } from '../config.js';
+import { W, H, textStyle } from '../config.js';
 import { Background } from '../background.js';
 import { addMuteButton, addIconButton } from '../ui.js';
 import { unlockAudio, sfx } from '../sfx.js';
@@ -11,13 +11,14 @@ export class MenuScene extends Phaser.Scene {
     this.bg = new Background(this);
 
     // Title
-    const title = this.add.container(W / 2, 300);
+    const titleY = Math.round(H * 0.31);
+    const title = this.add.container(W / 2, titleY);
     title.add(this.add.text(0, -45, 'DIAPER', textStyle(96, '#ffd166')).setOrigin(0.5));
     title.add(this.add.text(0, 50, 'MAN', textStyle(110, '#ef476f')).setOrigin(0.5));
     title.setAngle(-4);
-    this.tweens.add({ targets: title, y: 285, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.tweens.add({ targets: title, y: titleY - 15, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-    const tap = this.add.text(W / 2, 560, 'TAP TO PLAY', textStyle(50)).setOrigin(0.5);
+    const tap = this.add.text(W / 2, Math.round(H * 0.58), 'TAP TO PLAY', textStyle(50)).setOrigin(0.5);
     this.tweens.add({ targets: tap, scale: 1.1, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     // Leaderboard: top-left, opposite the sound button

@@ -1,8 +1,10 @@
-// Shared game constants. The game is designed at 540x960 (portrait) and
-// scaled to fit any phone screen.
+// Shared game constants. The game is 540 wide; its height follows the
+// screen's shape so it fills the whole screen on any phone (no side bars).
+// 960 tall on a 16:9 screen, taller on modern tall phones.
 export const W = 540;
-export const H = 960;
-export const GROUND_Y = 800;
+const screenRatio = (window.innerHeight || 960) / (window.innerWidth || 540);
+export const H = Math.round(Math.min(1300, Math.max(930, W * screenRatio)));
+export const GROUND_Y = H - 160; // ground sits the same distance from the bottom
 
 export const FONT = '"Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif';
 
