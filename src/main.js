@@ -8,7 +8,9 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   create() {
     makeTextures(this);
-    document.getElementById('loading')?.remove();
+    // Fade out the loading screen (older cached pages just have a plain one)
+    if (window.__hideLoader) window.__hideLoader();
+    else document.getElementById('loading')?.remove();
     this.scene.start('Menu');
   }
 }

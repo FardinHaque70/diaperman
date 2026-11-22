@@ -71,26 +71,58 @@
     #name-input.shake { animation: shake 0.3s; border-color: #ef476f; }
     @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
     #name-hint { margin: 10px 0 0; font-size: 14px; color: #457b9d; }
+    /* ---------- Loading screen (pure HTML/CSS: shows instantly) ---------- */
     #loading {
-      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-      font: bold 22px "Trebuchet MS", sans-serif; color: #fff; text-shadow: 0 2px 0 #1d3557;
+      position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box;
+      background: linear-gradient(#6ec6ff, #e0f4ff 72%, #74c69d 72%, #74c69d 75%, #c68b59 75%);
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif; transition: opacity 0.35s;
     }
+    #loading.done { opacity: 0; pointer-events: none; }
+    .ld-title { text-align: center; line-height: 0.95; transform: rotate(-4deg); font-weight: 900; margin-bottom: 4px; }
+    .ld-title b { display: block; font-size: 58px; color: #ffd166; -webkit-text-stroke: 7px #1d3557; paint-order: stroke fill; }
+    .ld-title b + b { font-size: 68px; color: #ef476f; }
+    .ld-hero { width: 120px; height: 120px; animation: ld-bounce 0.55s ease-in-out infinite alternate; }
+    @keyframes ld-bounce { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-14px) rotate(4deg); } }
+    .ld-track {
+      position: relative; width: min(320px, 82vw); height: 22px; margin-top: 30px; box-sizing: border-box;
+      border: 4px solid #1d3557; border-radius: 14px; background: #fff;
+    }
+    #ld-fill {
+      height: 100%; width: 3%; border-radius: 10px;
+      background: repeating-linear-gradient(45deg, #8ecae6 0 10px, #bde0fe 10px 20px);
+      background-size: 28px 28px; animation: ld-stripes 0.6s linear infinite;
+    }
+    @keyframes ld-stripes { to { background-position: 28px 0; } }
+    #ld-baby { position: absolute; top: -36px; left: 3%; transform: translateX(-50%); font-size: 30px; animation: ld-crawl 0.3s ease-in-out infinite alternate; }
+    @keyframes ld-crawl { to { margin-top: -4px; } }
+    .ld-bottle { position: absolute; top: -34px; right: -14px; font-size: 26px; }
+    #ld-msg {
+      min-height: 24px; font-size: 19px; font-weight: bold; color: #fff; text-align: center;
+      text-shadow: 0 2px 0 #1d3557, 0 -1px 0 #1d3557, 2px 0 0 #1d3557, -2px 0 0 #1d3557; transition: opacity 0.25s;
+    }
+    #ld-msg.fade { opacity: 0; }
   </style>
-  <!-- Game engine, hosted with the game (no outside site needed) -->
-  <script src="vendor/phaser-3.80.1.min.js"></script>
-  <script>
-    // On a slow connection, never leave people staring at "Loading..." with no way out
-    setTimeout(function () {
-      var el = document.getElementById('loading');
-      if (!el) return; // game started
-      el.innerHTML = 'Still loading&hellip;<br><span style="font-size:16px">Tap to try again</span>';
-      el.style.textAlign = 'center';
-      el.onclick = function () { location.reload(); };
-    }, 12000);
-  </script>
 </head>
 <body>
-  <div id="loading">Loading…</div>
+  <div id="loading">
+    <svg class="ld-hero" viewBox="0 0 128 128" aria-hidden="true">
+      <path d="M52 70 L10 88 L44 104 Z" fill="#fff" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="40" y="78" width="48" height="30" rx="12" fill="#fff" stroke="#2b2d42" stroke-width="4"/>
+      <rect x="44" y="84" width="8" height="8" fill="#ffd166"/><rect x="76" y="84" width="8" height="8" fill="#ffd166"/>
+      <circle cx="66" cy="50" r="30" fill="#ffd6b0" stroke="#2b2d42" stroke-width="4"/>
+      <path d="M38 40 A28 28 0 0 1 94 40 Z" fill="#fff" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="37" y="36" width="58" height="7" rx="3" fill="#ffd166" stroke="#2b2d42" stroke-width="3"/>
+      <ellipse cx="70" cy="52" rx="26" ry="8" fill="#fff" stroke="#2b2d42" stroke-width="3"/>
+      <circle cx="62" cy="52" r="5" fill="#fff" stroke="#2b2d42" stroke-width="2"/><circle cx="79" cy="52" r="5" fill="#fff" stroke="#2b2d42" stroke-width="2"/>
+      <circle cx="64" cy="52" r="2.5" fill="#2b2d42"/><circle cx="81" cy="52" r="2.5" fill="#2b2d42"/>
+      <path d="M62 64 Q71 71 80 64" fill="none" stroke="#2b2d42" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="86" cy="62" r="4" fill="#ff8fa3" opacity="0.6"/>
+    </svg>
+    <div class="ld-title"><b>DIAPER</b><b>MAN</b></div>
+    <div class="ld-track"><div id="ld-fill"></div><span id="ld-baby">👶</span><span class="ld-bottle">🍼</span></div>
+    <div id="ld-msg">Warming up the milk…</div>
+  </div>
   <div id="game"></div>
   <div id="name-overlay" hidden>
     <form id="name-form" autocomplete="off">
@@ -100,6 +132,93 @@
       <p id="name-hint">Shown on the leaderboard. You can change it later.</p>
     </form>
   </div>
-  <script type="module" src="src/main.js"></script>
+  <!-- GAME_CODE: the build puts the packed game here -->
+  <script>
+  // Loads the game engine in the background with a real progress bar,
+  // then starts the game. The loading screen above is already showing.
+  (function () {
+    var ENGINE = 'vendor/phaser-diaperman-3.80.1.min.js';
+    var ENGINE_BYTES = 767468; // fallback for progress if the server doesn't say
+    var el = document.getElementById('loading');
+    var fill = document.getElementById('ld-fill');
+    var baby = document.getElementById('ld-baby');
+    var msg = document.getElementById('ld-msg');
+    var MSGS = [
+      'Warming up the milk…', 'Changing diapers…', 'Untangling the cape…', 'Finding the pacifier…',
+      'Hiding from the vacuum…', 'Burping the baby…', 'Counting toes… 1, 2, 7…', 'Teaching ducks to quack…',
+      'Polishing the sippy cup rocket…', 'Negotiating nap time…', 'Wiping off the drool…'
+    ];
+    var target = 0.03, shown = 0.03, finished = false;
+    function progress(p) { target = Math.max(target, Math.min(1, p)); }
+
+    // Smooth bar; creeps forward a little so it never looks frozen
+    (function tick() {
+      if (target < 0.9) target += 0.0006;
+      shown += (target - shown) * 0.15;
+      var pct = (shown * 100).toFixed(1) + '%';
+      fill.style.width = pct;
+      baby.style.left = pct;
+      if (!finished) requestAnimationFrame(tick);
+    })();
+
+    // Silly messages
+    var m = Math.floor(Math.random() * MSGS.length);
+    msg.textContent = MSGS[m];
+    var msgTimer = setInterval(function () {
+      msg.classList.add('fade');
+      setTimeout(function () { m = (m + 1) % MSGS.length; msg.textContent = MSGS[m]; msg.classList.remove('fade'); }, 250);
+    }, 1400);
+
+    // Way out on a really slow connection
+    var slowTimer = setTimeout(function () {
+      clearInterval(msgTimer);
+      msg.innerHTML = 'Still loading… slow signal?<br><u>Tap to try again</u>';
+      el.onclick = function () { location.reload(); };
+    }, 25000);
+
+    function startGame() {
+      progress(0.97);
+      if (window.__startGame) window.__startGame();      // packed build
+      else import('./src/main.js');                       // local development
+    }
+
+    // Called by the game once it's ready to show
+    window.__hideLoader = function () {
+      finished = true;
+      clearInterval(msgTimer); clearTimeout(slowTimer);
+      fill.style.width = baby.style.left = '100%';
+      setTimeout(function () {
+        el.classList.add('done');
+        setTimeout(function () { el.remove(); }, 400);
+      }, 200);
+      // After the first visit, keep a copy on the phone for instant launches
+      if ('serviceWorker' in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      }
+    };
+
+    function loadWithTag() { // fallback if XHR isn't possible
+      var s = document.createElement('script');
+      s.src = ENGINE; s.onload = startGame;
+      document.head.appendChild(s);
+    }
+
+    var x = new XMLHttpRequest();
+    x.open('GET', ENGINE);
+    x.onprogress = function (e) {
+      var total = e.lengthComputable && e.total ? e.total : ENGINE_BYTES;
+      progress(0.05 + 0.85 * (e.loaded / total));
+    };
+    x.onload = function () {
+      if (x.status !== 200) return loadWithTag();
+      var s = document.createElement('script');
+      s.text = x.responseText;
+      document.head.appendChild(s); // runs the engine
+      startGame();
+    };
+    x.onerror = loadWithTag;
+    x.send();
+  })();
+  </script>
 </body>
 </html>

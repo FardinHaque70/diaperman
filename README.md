@@ -33,6 +33,17 @@ Packing everything into one page means phones always get a complete version
 To try the packed build locally: `npm install --no-save esbuild@0.24.0 && node scripts/build.mjs`,
 then serve the `dist/` folder.
 
+## Fast loading
+
+- A loading screen built into the page shows instantly, with a real progress
+  bar while the game engine downloads.
+- The engine is a slim custom Phaser build with only what DiaperMan uses
+  (`vendor/phaser-diaperman-3.80.1.min.js`, ~35% smaller). Rebuild it with
+  `npm install --no-save --no-package-lock esbuild@0.24.0 phaser@3.80.1 && node scripts/build-phaser.mjs`
+  if the game starts using a Phaser feature that isn't included.
+- After the first visit a service worker (`sw.js`) keeps a copy on the phone,
+  so later launches are instant; new versions show up on the next launch.
+
 ## Link previews
 
 `preview.png` (1200×630) is the picture Messenger/WhatsApp show when the link
