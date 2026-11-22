@@ -39,7 +39,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.refreshYou();
     this.you.setInteractive({ useHandCursor: true });
     this.you.on('pointerup', () => this.changeName());
-    this.load();
+    this.loadScores();
   }
 
   plain(size, color = DARK) {
@@ -51,7 +51,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.you.setText(name ? `You: ${name} (${loadBest()})  ✏️ change` : '✏️ Enter your name');
   }
 
-  async load() {
+  async loadScores() {
     this.rows.removeAll(true);
     this.status.setText('Loading...');
     const top = await fetchTop(ROWS);
@@ -81,7 +81,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.status.setText('Saving...');
     this.rows.removeAll(true);
     await submitScore(loadBest()); // re-save your best under the new name
-    if (this.sys.isActive()) this.load();
+    if (this.sys.isActive()) this.loadScores();
   }
 
   update(_t, delta) {
