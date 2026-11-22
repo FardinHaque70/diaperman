@@ -16,24 +16,16 @@ python3 -m http.server 8080
 Then open http://localhost:8080. To try it on your phone, connect it to the
 same Wi-Fi and open `http://<your-mac's-ip>:8080`.
 
-## Put it online (to share on Messenger)
+## Play it / share it
 
-You need a free host that gives you a public link. Upload these files:
-`index.html`, `manifest.webmanifest`, `icon.svg` and the `src/` folder.
+Live at **https://fardinhaque70.github.io/diaperman/** (GitHub Pages).
 
-**Easiest: Netlify Drop**
-1. Go to https://app.netlify.com/drop and sign up (free).
-2. Drag the `DiaperMan` folder onto the page.
-3. You get a link like `https://something.netlify.app`. Rename it in
-   *Site settings* to something nicer, e.g. `diaperman.netlify.app`.
-4. To update the game later, drag the folder onto the site's *Deploys* tab again.
+To publish changes, commit and push to `main`; GitHub updates the site
+within a minute or two:
 
-**Alternative: GitHub Pages**: push this folder to a GitHub repo, then
-*Settings → Pages → Deploy from branch → main*. The link is
-`https://<username>.github.io/<repo>/`.
-
-**Alternative: itch.io**: zip the files, create a new HTML game project,
-upload the zip and tick *"This file will be played in the browser"*.
+```bash
+git add -A && git commit -m "Update game" && git push
+```
 
 ## Nice link previews
 
