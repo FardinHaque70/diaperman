@@ -33,6 +33,8 @@ export class GameScene extends Phaser.Scene {
     this.best = loadBest();
     this.isOver = false;
     this.restarting = false;
+    this.popPool = {};         // reusable floating texts
+    this.dustPool = [];        // reusable vacuum dust specks
     this.namePrompt = false;
     this.jumps = 0;
     this.spawnTimer = 2.0;
@@ -273,9 +275,17 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: u, angle: { from: -12, to: 12 }, duration: 380, yoyo: true, repeat: -1 });
   }
 
+  // Floating "+5" style text. Reuses finished ones with the same look, so the
+  // phone doesn't redraw and re-upload a new text image for every pickup.
   popText(x, y, msg, color = '#ffd166', size = 30) {
-    const t = this.add.text(x, y, msg, textStyle(size, color)).setOrigin(0.5).setDepth(50);
-    this.tweens.add({ targets: t, y: y - 60, alpha: 0, duration: 650, onComplete: () => t.destroy() });
+    const key = `${msg}|${color}|${size}`;
+    const pool = (this.popPool[key] ||= []);
+    const t = pool.pop() || this.add.text(0, 0, msg, textStyle(size, color)).setOrigin(0.5).setDepth(50);
+    t.setPosition(x, y).setAlpha(1).setVisible(true);
+    this.tweens.add({
+      targets: t, y: y - 60, alpha: 0, duration: 650,
+      onComplete: () => { t.setVisible(false); pool.push(t); },
+    });
   }
 
   banner(msg, color = '#ffffff', size = 44, hold = 800, y = 300) {
@@ -552,9 +562,14 @@ export class GameScene extends Phaser.Scene {
     vac.dust -= dt;
     if (vac.dust <= 0) {
       vac.dust = 0.07;
-      const d = this.add.image(v.x + 80 + Phaser.Math.Between(40, 220), GROUND_Y - Phaser.Math.Between(5, 160), 'dust')
-        .setDepth(11).setAlpha(0.8).setTint(0xdddddd);
-      this.tweens.add({ targets: d, x: v.x + 68, y: GROUND_Y - 24, scale: 0.3, duration: 260, onComplete: () => d.destroy() });
+      // Reuse dust specks instead of creating/destroying ~14 images a second
+      const d = this.dustPool.pop() || this.add.image(0, 0, 'dust').setDepth(11).setTint(0xdddddd);
+      d.setPosition(v.x + 80 + Phaser.Math.Between(40, 220), GROUND_Y - Phaser.Math.Between(5, 160))
+        .setScale(1).setAlpha(0.8).setVisible(true);
+      this.tweens.add({
+        targets: d, x: v.x + 68, y: GROUND_Y - 24, scale: 0.3, duration: 260,
+        onComplete: () => { d.setVisible(false); this.dustPool.push(d); },
+      });
     }
 
     if (vac.t >= VACUUM_TIME) this.endVacuum(true);
