@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>DiaperMan</title>
+  <meta name="description" content="Tap to jump! Help DiaperMan dodge toys and grab milk bottles.">
+
+  <!-- Link preview when shared in Messenger / WhatsApp / etc. -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DiaperMan">
+  <meta property="og:description" content="Tap to jump! How far can you get? Beat my score.">
+  <!-- After hosting, add a preview image with a full URL, e.g.:
+  <meta property="og:image" content="https://YOUR-SITE/preview.png"> -->
+
+  <!-- Feels like an app when added to the home screen -->
+  <meta name="theme-color" content="#6ec6ff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      /* sky above, dirt below, so tall phones blend into the game */
+      background: linear-gradient(#6ec6ff 50%, #c68b59 50%);
+      overflow: hidden;
+      overscroll-behavior: none;      /* no pull-to-refresh */
+      touch-action: none;             /* no pinch-zoom / scroll */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #game {
+      position: fixed;
+      inset: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    /* One-time name box */
+    #name-overlay {
+      position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+      background: rgba(29, 53, 87, 0.55); padding: 16px;
+    }
+    #name-overlay[hidden] { display: none; }
+    #name-form {
+      width: 100%; max-width: 360px; background: #fff; border: 5px solid #1d3557; border-radius: 24px;
+      padding: 22px 18px; box-sizing: border-box; text-align: center;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+    }
+    #name-title { margin: 0 0 14px; font-size: 20px; font-weight: bold; color: #1d3557; }
+    #name-input {
+      width: 100%; box-sizing: border-box; font: bold 22px "Trebuchet MS", sans-serif; /* >=16px: no iOS zoom */
+      padding: 12px 14px; border: 3px solid #8ecae6; border-radius: 14px; text-align: center; color: #1d3557;
+      -webkit-user-select: text; user-select: text; outline: none;
+    }
+    #name-input:focus { border-color: #3a86ff; }
+    #name-form button {
+      margin-top: 14px; width: 100%; font: bold 24px "Trebuchet MS", sans-serif; color: #fff; background: #06d6a0;
+      border: 4px solid #1d3557; border-radius: 16px; padding: 10px; cursor: pointer;
+    }
+    #name-input::placeholder { color: #a8c5da; }
+    #name-input.shake { animation: shake 0.3s; border-color: #ef476f; }
+    @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    #name-hint { margin: 10px 0 0; font-size: 14px; color: #457b9d; }
+    #loading {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      font: bold 22px "Trebuchet MS", sans-serif; color: #fff; text-shadow: 0 2px 0 #1d3557;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div id="loading">Loading…</div>
+  <div id="game"></div>
+  <div id="name-overlay" hidden>
+    <form id="name-form" autocomplete="off">
+      <p id="name-title"></p>
+      <input id="name-input" maxlength="16" enterkeyhint="done" autocapitalize="words" spellcheck="false" placeholder="Your name" aria-label="Your name">
+      <button type="submit">OK</button>
+      <p id="name-hint">Shown on the leaderboard. You can change it later.</p>
+    </form>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
