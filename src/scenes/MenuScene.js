@@ -1,12 +1,14 @@
 import { W, H, textStyle } from '../config.js';
 import { Background } from '../background.js';
-import { addMuteButton, addIconButton } from '../ui.js';
+import { addMuteButton, addIconButton, fitCamera } from '../ui.js';
 import { unlockAudio, sfx } from '../sfx.js';
+import { warmUp } from '../leaderboard.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
+    fitCamera(this);
     this.starting = false;
     this.bg = new Background(this);
 
@@ -29,6 +31,9 @@ export class MenuScene extends Phaser.Scene {
     });
 
     addMuteButton(this);
+
+    // Connect to the leaderboard quietly while the player is on the menu
+    this.time.delayedCall(600, warmUp);
 
     this.input.on('pointerdown', (_p, over) => {
       if (over.length) return; // tapped a button

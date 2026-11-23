@@ -1,4 +1,10 @@
-import { W, textStyle } from './config.js';
+import { W, H, RES, textStyle } from './config.js';
+
+// Every scene calls this first: zoom the camera so the game's normal
+// 540-wide coordinates fill the higher-detail canvas.
+export function fitCamera(scene) {
+  scene.cameras.main.setZoom(RES).centerOn(W / 2, H / 2);
+}
 import { isMuted, toggleMute, unlockAudio } from './sfx.js';
 
 // Rounded pill button. Fires on pointerup (a finished tap).
@@ -15,7 +21,7 @@ export function addButton(scene, x, y, label, onTap, { width = 320, color = 0x3a
 // Small round icon button (same look as the sound button).
 export function addIconButton(scene, x, y, icon, onTap) {
   const bg = scene.add.circle(x, y, 30, 0x1d3557, 0.35).setDepth(100);
-  const label = scene.add.text(x, y + 2, icon, { fontSize: '30px' }).setOrigin(0.5).setDepth(101);
+  const label = scene.add.text(x, y + 2, icon, { fontSize: '30px', resolution: RES }).setOrigin(0.5).setDepth(101);
   bg.setInteractive({ useHandCursor: true });
   bg.on('pointerdown', () => scene.tweens.add({ targets: [bg, label], scale: 0.9, duration: 70, yoyo: true }));
   bg.on('pointerup', onTap);

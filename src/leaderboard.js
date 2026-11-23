@@ -77,19 +77,46 @@ export async function submitScore(score) {
   }
 }
 
-// Top players: [{ name, best, me }], or null if it couldn't load.
+// ---------------------------------------------------------------- top scores (cached)
+// The top 10 is kept in memory and on the phone, so screens can show it
+// instantly and refresh it quietly in the background.
+const TOP_KEY = 'diaperman.top';
+let top = null;      // [{ name, best, me }]
+let topAt = 0;       // when it was last fetched
+let topLoading = null;
+
+try { top = JSON.parse(store.get(TOP_KEY) || 'null'); } catch { top = null; }
+
+// Last known top players (possibly a little old), or null if never loaded.
+export function cachedTop(limit = 10) {
+  return top ? top.slice(0, limit) : null;
+}
+
+// Fresh top players: [{ name, best, me }], or null if it couldn't load.
 export async function fetchTop(limit = 10) {
   if (!leaderboardEnabled()) return null;
-  try {
-    return await withTimeout((async () => {
+  if (!topLoading) {
+    topLoading = withTimeout((async () => {
       const { fs, db, uid } = await connect();
-      const snap = await fs.getDocs(fs.query(fs.collection(db, 'scores'), fs.orderBy('best', 'desc'), fs.limit(limit)));
-      return snap.docs.map((d) => ({ name: d.data().name, best: d.data().best, me: d.id === uid }));
-    })());
-  } catch (err) {
-    console.warn('Leaderboard load failed', err);
-    return null;
+      const snap = await fs.getDocs(fs.query(fs.collection(db, 'scores'), fs.orderBy('best', 'desc'), fs.limit(10)));
+      top = snap.docs.map((d) => ({ name: d.data().name, best: d.data().best, me: d.id === uid }));
+      topAt = Date.now();
+      store.set(TOP_KEY, JSON.stringify(top));
+      return top;
+    })()).catch((err) => {
+      console.warn('Leaderboard load failed', err);
+      return null;
+    }).finally(() => { topLoading = null; });
   }
+  const list = await topLoading;
+  return list ? list.slice(0, limit) : null;
+}
+
+// Connect and load the top 10 in the background (e.g. while on the menu),
+// so the leaderboard and end screen don't have to wait later.
+export function warmUp() {
+  if (!leaderboardEnabled() || Date.now() - topAt < 20000) return;
+  fetchTop(10);
 }
 
 // ---------------------------------------------------------------- name box

@@ -1,4 +1,4 @@
-import { W, H, GROUND_Y } from './config.js';
+import { W, H, GROUND_Y, RES } from './config.js';
 
 // Parallax scrolling backdrop shared by the menu and the game.
 export class Background {
@@ -9,14 +9,15 @@ export class Background {
     scene.add.circle(440, 140, 50, 0xfff3a0);
     scene.add.circle(440, 140, 70, 0xfff3a0, 0.25);
 
-    this.clouds = scene.add.tileSprite(0, 70, W, 300, 'clouds').setOrigin(0, 0);
-    this.hills = scene.add.tileSprite(0, GROUND_Y - 195, W, 200, 'hills').setOrigin(0, 0);
-    this.ground = scene.add.tileSprite(0, GROUND_Y - 12, W, H - GROUND_Y + 12, 'ground').setOrigin(0, 0);
+    this.clouds = scene.add.tileSprite(0, 70, W, 300, 'clouds').setOrigin(0, 0).setTileScale(1 / RES);
+    this.hills = scene.add.tileSprite(0, GROUND_Y - 195, W, 200, 'hills').setOrigin(0, 0).setTileScale(1 / RES);
+    this.ground = scene.add.tileSprite(0, GROUND_Y - 12, W, H - GROUND_Y + 12, 'ground').setOrigin(0, 0).setTileScale(1 / RES);
   }
 
   scroll(px) {
-    this.clouds.tilePositionX += px * 0.08;
-    this.hills.tilePositionX += px * 0.3;
-    this.ground.tilePositionX += px;
+    // tilePosition is in texture pixels, which are RES x finer
+    this.clouds.tilePositionX += px * 0.08 * RES;
+    this.hills.tilePositionX += px * 0.3 * RES;
+    this.ground.tilePositionX += px * RES;
   }
 }

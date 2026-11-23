@@ -1,4 +1,4 @@
-import { W, H, GRAVITY } from './config.js';
+import { W, H, GRAVITY, RES } from './config.js';
 import { makeTextures } from './art.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
@@ -23,8 +23,8 @@ window.game = new Phaser.Game({
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: W,
-    height: H,
+    width: W * RES,   // drawn at RES x detail; each scene's camera zooms by RES
+    height: H * RES,
   },
   physics: {
     default: 'arcade',

@@ -1,6 +1,6 @@
 // All game art is drawn in code and baked into textures at startup,
 // so the game needs no image files and loads almost instantly.
-import { COLORS as C, W, H, GROUND_Y, MAX_STAGE } from './config.js';
+import { COLORS as C, W, H, GROUND_Y, MAX_STAGE, RES } from './config.js';
 
 export const HERO_W = 80;
 export const HERO_H = 92;
@@ -9,7 +9,11 @@ export const heroKey = (stage, pose) => `hero_${stage}_${pose}`;
 
 export function makeTextures(scene) {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const bake = (key, w, h, draw) => { g.clear(); draw(g); g.generateTexture(key, w, h); };
+  // Draw at RES x detail (shown at 1/RES scale, so sizes in the game are unchanged)
+  const bake = (key, w, h, draw) => {
+    g.clear(); g.save(); g.scaleCanvas(RES, RES); draw(g); g.restore();
+    g.generateTexture(key, Math.ceil(w * RES), Math.ceil(h * RES));
+  };
 
   // Hero: every outfit stage (0 = naked ... 8 = full DiaperMan) x 3 poses
   for (let stage = 0; stage <= MAX_STAGE; stage++) {

@@ -1,7 +1,7 @@
-import { W, H, textStyle, loadBest } from '../config.js';
+import { W, H, RES, textStyle, loadBest } from '../config.js';
 import { Background } from '../background.js';
-import { addButton } from '../ui.js';
-import { leaderboardEnabled, fetchTop, getName, askName, submitScore } from '../leaderboard.js';
+import { addButton, fitCamera } from '../ui.js';
+import { leaderboardEnabled, fetchTop, cachedTop, getName, askName, submitScore } from '../leaderboard.js';
 
 const ROWS = 10;
 const TOP = 250;     // top of the white box
@@ -12,6 +12,7 @@ export class LeaderboardScene extends Phaser.Scene {
   constructor() { super('Leaderboard'); }
 
   create() {
+    fitCamera(this);
     this.bg = new Background(this);
     this.add.rectangle(W / 2, H / 2, W, H, 0x1d3557, 0.25);
     this.add.text(W / 2, 150, 'LEADERBOARD', textStyle(60, '#ffd166')).setOrigin(0.5);
@@ -43,7 +44,7 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   plain(size, color = DARK) {
-    return { fontFamily: '"Trebuchet MS", Arial, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color };
+    return { fontFamily: '"Trebuchet MS", Arial, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color, resolution: RES };
   }
 
   refreshYou() {
@@ -52,12 +53,14 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   async loadScores() {
-    this.rows.removeAll(true);
-    this.status.setText('Loading...');
+    // Show the last known scores instantly, then refresh them
+    const cached = cachedTop(ROWS);
+    if (cached) this.renderRows(cached);
+    else { this.rows.removeAll(true); this.status.setText('Loading...'); }
     const top = await fetchTop(ROWS);
     if (!this.sys.isActive()) return;
-    if (!top) { this.status.setText("Couldn't load the leaderboard.\nCheck your connection."); return; }
-    this.renderRows(top);
+    if (top) this.renderRows(top);
+    else if (!cached) this.status.setText("Couldn't load the leaderboard.\nCheck your connection.");
   }
 
   renderRows(top) {

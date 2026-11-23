@@ -6,6 +6,14 @@ const screenRatio = (window.innerHeight || 960) / (window.innerWidth || 540);
 export const H = Math.round(Math.min(1300, Math.max(930, W * screenRatio)));
 export const GROUND_Y = H - 160; // ground sits the same distance from the bottom
 
+// Drawing detail. Phones have 2-3x denser screens, so the game draws at 2x
+// detail there (sharper text and art). Positions in the code stay in the
+// normal 540-wide units: the camera zooms by RES and art is drawn at RES x
+// size, shown at 1/RES scale. Add ?res=1 to the link to force normal detail.
+const resParam = Number(new URLSearchParams(location.search).get('res'));
+export const RES = resParam === 1 || resParam === 2 ? resParam : ((window.devicePixelRatio || 1) >= 2 ? 2 : 1);
+export const S = (scale) => scale / RES; // display scale for art drawn at RES x
+
 export const FONT = '"Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif';
 
 export const COLORS = {
@@ -96,5 +104,6 @@ export function textStyle(size, color = '#ffffff') {
     stroke: '#1d3557',
     strokeThickness: Math.max(4, Math.round(size / 7)),
     align: 'center',
+    resolution: RES, // sharp text at the higher detail
   };
 }

@@ -1,5 +1,5 @@
 import {
-  W, H, GROUND_Y, textStyle, loadBest, saveBest,
+  W, H, GROUND_Y, RES, S, textStyle, loadBest, saveBest,
   JUMP_VELOCITY, DOUBLE_JUMP_VELOCITY, START_SPEED, MAX_SPEED, SPEED_GAIN,
   STAGE_NAMES, MAX_STAGE, DIAPER_POINTS, DIAPER_POINTS_MAXED,
   UNLOCK_TALL_TOWERS, UNLOCK_BEES, UNLOCK_WIDE_TOWERS, GAP_MIN, GAP_MAX, GAP_SQUEEZE_MAX, GAP_SQUEEZE_TIME,
@@ -8,9 +8,9 @@ import {
 } from '../config.js';
 import { heroKey } from '../art.js';
 import { Background } from '../background.js';
-import { addMuteButton } from '../ui.js';
+import { addMuteButton, fitCamera } from '../ui.js';
 import { unlockAudio, sfx } from '../sfx.js';
-import { leaderboardEnabled, getName, askName, submitScore, fetchTop } from '../leaderboard.js';
+import { leaderboardEnabled, getName, askName, submitScore, fetchTop, cachedTop } from '../leaderboard.js';
 
 const SPAWN_X = W + 80;
 const BLOCKS = ['blockRed', 'blockBlue', 'blockGreen'];
@@ -22,6 +22,7 @@ export class GameScene extends Phaser.Scene {
   constructor() { super('Game'); }
 
   create() {
+    fitCamera(this);
     this.cameras.main.fadeIn(200, 255, 255, 255);
     this.bg = new Background(this);
 
@@ -63,8 +64,9 @@ export class GameScene extends Phaser.Scene {
         this.anims.create({ key: `run${s}`, frames: [{ key: heroKey(s, 0) }, { key: heroKey(s, 1) }], frameRate: 10, repeat: -1 });
       }
     }
-    this.player = this.physics.add.sprite(HERO_X, GROUND_Y - 46, heroKey(0, 0)).setDepth(10);
-    this.player.body.setSize(30, 56).setOffset(27, 34);
+    this.player = this.physics.add.sprite(HERO_X, GROUND_Y - 46, heroKey(0, 0)).setDepth(10).setScale(S(1));
+    // Hitbox sizes are in texture pixels (RES x), so they match at any detail level
+    this.player.body.setSize(30 * RES, 56 * RES).setOffset(27 * RES, 34 * RES);
     this.physics.add.collider(this.player, floor);
 
     // Obstacles + collectibles
@@ -76,32 +78,32 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.bottles, (_p, b) => this.collect(b));
     this.physics.add.overlap(this.player, this.diapers, (_p, d) => this.collectDiaper(d));
     this.physics.add.overlap(this.player, this.powerups, (_p, u) => this.collectPowerup(u));
-    this.mouth = this.add.image(0, 0, 'mouthO').setDepth(11).setVisible(false);
+    this.mouth = this.add.image(0, 0, 'mouthO').setDepth(11).setVisible(false).setScale(S(1));
 
     // Effects
     this.dust = this.add.particles(0, 0, 'dust', {
       speed: { min: 40, max: 140 }, angle: { min: 190, max: 260 }, lifespan: 380,
-      scale: { start: 1, end: 0 }, alpha: { start: 0.9, end: 0 }, emitting: false,
+      scale: { start: S(1), end: 0 }, alpha: { start: 0.9, end: 0 }, emitting: false,
     }).setDepth(9);
     this.sparks = this.add.particles(0, 0, 'spark', {
-      speed: { min: 80, max: 260 }, lifespan: 500, scale: { start: 1.3, end: 0 },
+      speed: { min: 80, max: 260 }, lifespan: 500, scale: { start: S(1.3), end: 0 },
       rotate: { min: 0, max: 360 }, emitting: false,
     }).setDepth(11);
     // Golden sparkle trail once fully suited up
     this.trail = this.add.particles(0, 0, 'spark', {
       speed: { min: 20, max: 70 }, angle: { min: 150, max: 210 }, lifespan: 500,
-      scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, frequency: 45, emitting: false,
+      scale: { start: S(1), end: 0 }, alpha: { start: 1, end: 0 }, frequency: 45, emitting: false,
     }).setDepth(9);
     this.trail.startFollow(this.player, -18, 8);
     // Rocket: sippy cup on his back + flames
-    this.jetpack = this.add.image(0, 0, 'jetpack').setDepth(9).setVisible(false);
+    this.jetpack = this.add.image(0, 0, 'jetpack').setDepth(9).setVisible(false).setScale(S(1));
     this.flames = this.add.particles(0, 0, 'flame', {
       speed: { min: 140, max: 260 }, angle: { min: 150, max: 200 }, lifespan: 280,
-      scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, frequency: 14, emitting: false,
+      scale: { start: S(1.2), end: 0 }, alpha: { start: 1, end: 0 }, frequency: 14, emitting: false,
     }).setDepth(8);
     this.stink = this.add.particles(0, 0, 'stink', {
       speed: { min: 60, max: 220 }, angle: { min: 20, max: 160 }, lifespan: 900,
-      scale: { start: 0.8, end: 2.2 }, alpha: { start: 0.9, end: 0 }, emitting: false,
+      scale: { start: S(0.8), end: S(2.2) }, alpha: { start: 0.9, end: 0 }, emitting: false,
     }).setDepth(9);
 
     // HUD
@@ -110,7 +112,7 @@ export class GameScene extends Phaser.Scene {
     // Suit progress: one pip per diaper piece
     this.pips = [];
     for (let i = 0; i < MAX_STAGE; i++) {
-      this.pips.push(this.add.image(40 + i * 30, 140, 'diaperItem').setScale(0.55).setAlpha(0.3).setDepth(100));
+      this.pips.push(this.add.image(40 + i * 30, 140, 'diaperItem').setScale(S(0.55)).setAlpha(0.3).setDepth(100));
     }
     this.meter = this.add.graphics().setDepth(100); // rocket / vacuum timer bar
     this.meterLabel = this.add.text(W / 2, 196, '', textStyle(20)).setOrigin(0.5).setDepth(100);
@@ -161,12 +163,12 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(i * 55, () => {
         if (this.isOver) return;
         const m = this.mouthPos();
-        const b = this.add.image(m.x + 4, m.y, 'spit').setScale(0.4).setDepth(12);
+        const b = this.add.image(m.x + 4, m.y, 'spit').setScale(S(0.4)).setDepth(12);
         this.tweens.add({
           targets: b,
           x: b.x - Phaser.Math.Between(50, 170),
           y: b.y - Phaser.Math.Between(30, 140),
-          scale: Phaser.Math.FloatBetween(0.9, 1.5),
+          scale: S(Phaser.Math.FloatBetween(0.9, 1.5)),
           duration: Phaser.Math.Between(450, 800),
           ease: 'Sine.out',
           onComplete: () => {
@@ -208,14 +210,14 @@ export class GameScene extends Phaser.Scene {
     if (sec > UNLOCK_BEES && roll < 0.25) {
       // Bee: low (must jump) or high (stay on the ground)
       const low = Math.random() < 0.5;
-      const bee = this.obstacles.create(SPAWN_X, low ? GROUND_Y - 42 : GROUND_Y - 200, 'bee');
-      bee.body.setSize(40, 26).setOffset(8, 18);
+      const bee = this.obstacles.create(SPAWN_X, low ? GROUND_Y - 42 : GROUND_Y - 200, 'bee').setScale(S(1));
+      bee.body.setSize(40 * RES, 26 * RES).setOffset(8 * RES, 18 * RES);
       this.tweens.add({ targets: bee, y: bee.y - 14, duration: 350, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       if (giveDiaper) this.addDiaper(SPAWN_X, low ? GROUND_Y - 190 : GROUND_Y - 55);
       else if (!low) this.addBottles(SPAWN_X, GROUND_Y - 60, 1);
     } else if (roll < 0.5) {
-      const duck = this.obstacles.create(SPAWN_X, GROUND_Y - 29, 'duck');
-      duck.body.setSize(46, 34).setOffset(8, 22);
+      const duck = this.obstacles.create(SPAWN_X, GROUND_Y - 29, 'duck').setScale(S(1));
+      duck.body.setSize(46 * RES, 34 * RES).setOffset(8 * RES, 22 * RES);
       this.tweens.add({ targets: duck, angle: { from: -6, to: 6 }, duration: 260, yoyo: true, repeat: -1 });
       if (giveDiaper) this.addDiaper(SPAWN_X, GROUND_Y - 180);
     } else {
@@ -224,8 +226,8 @@ export class GameScene extends Phaser.Scene {
       const wide = sec > UNLOCK_WIDE_TOWERS && Math.random() < 0.3 ? 2 : 1;
       for (let c = 0; c < wide; c++) {
         for (let r = 0; r < tall; r++) {
-          const blk = this.obstacles.create(SPAWN_X + c * 54, GROUND_Y - 28 - r * 54, Phaser.Utils.Array.GetRandom(BLOCKS));
-          blk.body.setSize(46, 50).setOffset(5, 4);
+          const blk = this.obstacles.create(SPAWN_X + c * 54, GROUND_Y - 28 - r * 54, Phaser.Utils.Array.GetRandom(BLOCKS)).setScale(S(1));
+          blk.body.setSize(46 * RES, 50 * RES).setOffset(5 * RES, 4 * RES);
         }
       }
       width = wide * 54;
@@ -256,21 +258,21 @@ export class GameScene extends Phaser.Scene {
   addBottles(x, y, count, arc = false) {
     for (let i = 0; i < count; i++) {
       const dy = arc ? -Math.sin((i / Math.max(1, count - 1)) * Math.PI) * 40 : 0;
-      const b = this.bottles.create(x + i * 50, y + dy, 'bottle');
-      this.tweens.add({ targets: b, scale: 1.12, duration: 300, yoyo: true, repeat: -1 });
+      const b = this.bottles.create(x + i * 50, y + dy, 'bottle').setScale(S(1));
+      this.tweens.add({ targets: b, scale: S(1.12), duration: 300, yoyo: true, repeat: -1 });
     }
   }
 
   addDiaper(x, y) {
-    const d = this.diapers.create(x, y, 'diaperItem');
-    d.body.setSize(40, 32);
+    const d = this.diapers.create(x, y, 'diaperItem').setScale(S(1));
+    d.body.setSize(40 * RES, 32 * RES);
     this.tweens.add({ targets: d, y: y - 10, duration: 450, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: d, angle: { from: -10, to: 10 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   }
 
   addPowerup(x, y, key) {
-    const u = this.powerups.create(x, y, key).setScale(key === 'goldDiaper' ? 1.4 : 1);
-    u.body.setSize(40, 40);
+    const u = this.powerups.create(x, y, key).setScale(S(key === 'goldDiaper' ? 1.4 : 1));
+    u.body.setSize(40 * RES, 40 * RES);
     this.tweens.add({ targets: u, y: y - 14, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.tweens.add({ targets: u, angle: { from: -12, to: 12 }, duration: 380, yoyo: true, repeat: -1 });
   }
@@ -328,7 +330,7 @@ export class GameScene extends Phaser.Scene {
     this.flashHero(full ? 40 : 22);
     const pip = this.pips[this.stage - 1];
     pip.setAlpha(1);
-    this.tweens.add({ targets: pip, scale: 0.9, duration: 150, yoyo: true });
+    this.tweens.add({ targets: pip, scale: S(0.9), duration: 150, yoyo: true });
     this.banner(STAGE_NAMES[this.stage], full ? '#ffd166' : '#ffffff', full ? 52 : 44, full ? 1400 : 800);
 
     if (full) {
@@ -346,7 +348,7 @@ export class GameScene extends Phaser.Scene {
     p.setTexture(heroKey(this.stage, this.onGround() && this.rocket <= 0 ? 0 : 2));
     p.setTintFill(0xffffff);
     this.time.delayedCall(90, () => { if (!this.isOver) p.clearTint(); });
-    this.tweens.add({ targets: p, scale: 1.35, duration: 130, yoyo: true, ease: 'Quad.out', onComplete: () => p.setScale(1) });
+    this.tweens.add({ targets: p, scale: S(1.35), duration: 130, yoyo: true, ease: 'Quad.out', onComplete: () => p.setScale(S(1)) });
     this.sparks.explode(sparkCount, p.x, p.y);
   }
 
@@ -385,7 +387,7 @@ export class GameScene extends Phaser.Scene {
     this.rocketHumTimer = 0;
     this.player.body.setAllowGravity(false);
     this.tweens.killTweensOf(this.player);
-    this.player.setAngle(12).setScale(1);
+    this.player.setAngle(12).setScale(S(1));
     this.jetpack.setVisible(true).setAlpha(1);
     this.flames.start();
     this.cameras.main.flash(150, 255, 255, 255);
@@ -449,7 +451,7 @@ export class GameScene extends Phaser.Scene {
     this.jumps = 1; // one more mid-air jump to land safely
     this.flames.stop();
     this.jetpack.setVisible(false);
-    const cup = this.add.image(this.jetpack.x, this.jetpack.y, 'jetpack').setDepth(9);
+    const cup = this.add.image(this.jetpack.x, this.jetpack.y, 'jetpack').setDepth(9).setScale(S(1));
     this.tweens.add({ targets: cup, x: cup.x - 120, y: GROUND_Y + 40, angle: -400, duration: 800, ease: 'Quad.in', onComplete: () => cup.destroy() });
     this.makeSafe(1200);
     sfx.rocketEnd();
@@ -499,12 +501,12 @@ export class GameScene extends Phaser.Scene {
     const p = this.player;
     this.blowout = { t: 0 };
     this.tweens.killTweensOf(p);
-    p.setAngle(0).setScale(1);
+    p.setAngle(0).setScale(S(1));
     p.setVelocityY(BLOWOUT_VELOCITY);
     this.jumps = 2;
     this.stink.explode(18, p.x, p.y + 30);
-    const cloud = this.add.image(p.x, GROUND_Y - 20, 'stink').setScale(2).setDepth(9).setAlpha(0.9);
-    this.tweens.add({ targets: cloud, x: cloud.x - 300, scale: 5, alpha: 0, duration: 1600, onComplete: () => cloud.destroy() });
+    const cloud = this.add.image(p.x, GROUND_Y - 20, 'stink').setScale(S(2)).setDepth(9).setAlpha(0.9);
+    this.tweens.add({ targets: cloud, x: cloud.x - 300, scale: S(5), alpha: 0, duration: 1600, onComplete: () => cloud.destroy() });
     this.cameras.main.shake(180, 0.01);
     this.banner('DIAPER BLOWOUT!', '#95d5b2', 50, 1000, 250);
     sfx.blowout();
@@ -543,7 +545,7 @@ export class GameScene extends Phaser.Scene {
 
   // The Vacuum Is Coming! Survive the chase without getting hit.
   startVacuum() {
-    const v = this.add.image(-140, GROUND_Y - 60, 'vacuum').setDepth(12);
+    const v = this.add.image(-140, GROUND_Y - 60, 'vacuum').setDepth(12).setScale(S(1));
     this.vac = { sprite: v, t: 0, rumble: 0, dust: 0, lunging: false };
     this.tweens.add({ targets: v, angle: { from: -3, to: 3 }, duration: 90, yoyo: true, repeat: -1 });
     this.banner('THE VACUUM IS COMING!', '#ef476f', 40, 1200, 280);
@@ -565,9 +567,9 @@ export class GameScene extends Phaser.Scene {
       // Reuse dust specks instead of creating/destroying ~14 images a second
       const d = this.dustPool.pop() || this.add.image(0, 0, 'dust').setDepth(11).setTint(0xdddddd);
       d.setPosition(v.x + 80 + Phaser.Math.Between(40, 220), GROUND_Y - Phaser.Math.Between(5, 160))
-        .setScale(1).setAlpha(0.8).setVisible(true);
+        .setScale(S(1)).setAlpha(0.8).setVisible(true);
       this.tweens.add({
-        targets: d, x: v.x + 68, y: GROUND_Y - 24, scale: 0.3, duration: 260,
+        targets: d, x: v.x + 68, y: GROUND_Y - 24, scale: S(0.3), duration: 260,
         onComplete: () => { d.setVisible(false); this.dustPool.push(d); },
       });
     }
@@ -637,19 +639,19 @@ export class GameScene extends Phaser.Scene {
     this.pips[lost - 1].setAlpha(0.3);
 
     // The lost diaper goes flying... or gets sucked into the vacuum
-    const fly = this.add.image(p.x, p.y - 20, 'diaperItem').setDepth(13);
+    const fly = this.add.image(p.x, p.y - 20, 'diaperItem').setDepth(13).setScale(S(1));
     if (vac) {
       vac.lunging = true;
       this.tweens.add({ targets: vac.sprite, x: 95, duration: 180, yoyo: true });
       this.tweens.add({
-        targets: fly, x: vac.sprite.x + 130, y: GROUND_Y - 24, angle: 540, scale: 0.3,
+        targets: fly, x: vac.sprite.x + 130, y: GROUND_Y - 24, angle: 540, scale: S(0.3),
         duration: 380, ease: 'Quad.in', onComplete: () => fly.destroy(),
       });
       this.popText(Math.max(p.x + 60, 220), p.y - 80, 'SUCKED UP!', '#ef476f', 30);
       this.time.delayedCall(400, () => this.endVacuum(false));
     } else {
       this.tweens.add({
-        targets: fly, x: p.x - 170, y: p.y - 230, angle: -540, alpha: 0, scale: 0.6,
+        targets: fly, x: p.x - 170, y: p.y - 230, angle: -540, alpha: 0, scale: S(0.6),
         duration: 750, ease: 'Quad.out', onComplete: () => fly.destroy(),
       });
       const label = lost === MAX_STAGE ? 'POWER LOST!' : `LOST ${STAGE_NAMES[lost].replace('!', '')}!`;
@@ -690,7 +692,7 @@ export class GameScene extends Phaser.Scene {
     this.meterLabel.setText('');
     this.tweens.killTweensOf(this.player);
     this.player.anims.stop();
-    this.player.setTexture(heroKey(this.stage, 2)).setTint(0xff9a9a).setAngle(0).setScale(1).setAlpha(1);
+    this.player.setTexture(heroKey(this.stage, 2)).setTint(0xff9a9a).setAngle(0).setScale(S(1)).setAlpha(1);
     this.cameras.main.shake(260, 0.012);
     sfx.hit();
 
@@ -718,7 +720,7 @@ export class GameScene extends Phaser.Scene {
     let y = top + 50;
     panel.add(this.add.text(0, y, 'OOPS!', textStyle(52, '#ef476f')).setOrigin(0.5));
     y += 105;
-    panel.add(this.add.image(-135, y, heroKey(this.stage, 2)).setScale(1.3));
+    panel.add(this.add.image(-135, y, heroKey(this.stage, 2)).setScale(S(1.3)));
     panel.add(this.add.text(45, y - 42, `SCORE  ${this.score}`, textStyle(34)).setOrigin(0.5));
     panel.add(this.add.text(45, y, isBest ? 'NEW BEST!' : `BEST  ${this.best}`, textStyle(26, '#ffd166')).setOrigin(0.5));
     panel.add(this.add.text(45, y + 38, `SUIT  ${this.stage}/${MAX_STAGE}`, textStyle(26, '#8ecae6')).setOrigin(0.5));
@@ -737,6 +739,9 @@ export class GameScene extends Phaser.Scene {
       panel.add(this.topList);
       this.topStatus = this.add.text(0, this.topY + 80, 'Loading...', this.plain(24, '#8aa9c1')).setOrigin(0.5);
       panel.add(this.topStatus);
+      // Show the last known top 5 right away; it refreshes after your score is saved
+      const cached = cachedTop(5);
+      if (cached) this.renderTop5(cached, null, Math.max(this.score, this.best));
     }
 
     // Share button (taps on it don't restart the game)
@@ -769,7 +774,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   plain(size, color = '#1d3557') {
-    return { fontFamily: '"Trebuchet MS", Arial, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color };
+    return { fontFamily: '"Trebuchet MS", Arial, sans-serif', fontSize: `${size}px`, fontStyle: 'bold', color, resolution: RES };
   }
 
   // First run: pick a name. Then save the score, show the rank and the fresh top 5.
@@ -796,7 +801,7 @@ export class GameScene extends Phaser.Scene {
     // Fetched after saving, so your new score is already in the list
     const top5 = await fetchTop(5);
     if (!info.active) return;
-    this.renderTop5(top5, rank, myBest);
+    if (top5 || !cachedTop(5)) this.renderTop5(top5, rank, myBest);
   }
 
   renderTop5(top5, myRank, myBest) {
